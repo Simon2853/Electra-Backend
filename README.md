@@ -77,6 +77,21 @@ flowchart LR
 
 ## Cómo levantarlo
 
+### Opción rápida: `iniciar-todo.cmd`
+
+1. Abre **Laragon** y presiona **Start All**. Comprueba que MySQL esté corriendo.
+2. Haz doble clic en **`iniciar-todo.cmd`**, en la raíz del repositorio. Abre cada microservicio en su propia ventana y en este orden:
+   1. `eureka-server`, y espera a que responda;
+   2. `usuarios`, `pruebas`, `protocolos` y `archivos`, y espera a que respondan;
+   3. `api-gateway`.
+3. Para detener un servicio, cierra su ventana.
+
+El script usa el JDK de Android Studio si `JAVA_HOME` no está configurado. Si un servicio no arranca en 3 minutos, avisa cuál fue. Lo más común es que MySQL no esté corriendo.
+
+**Por qué ese orden:** Eureka es el registro donde cada servicio se anuncia al arrancar ("soy pruebas-service y estoy en el puerto 8082"). El Gateway le pregunta a Eureka dónde está cada servicio para reenviarle las peticiones de la app. El orden no es obligatorio, porque los servicios reintentan registrarse y el Gateway vuelve a consultar Eureka cada 30 segundos. Pero así se evitan los errores 503 mientras todo se encuentra.
+
+### Opción manual (un servicio por terminal)
+
 1. Abre **Laragon** y presiona **Start All**. Comprueba que MySQL esté corriendo.
 2. Indica qué JDK usar, en cada terminal que abras (PowerShell):
    ```powershell
