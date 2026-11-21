@@ -1,0 +1,35 @@
+# Única puerta de entrada de la app móvil: Retrofit solo conoce esta URL (puerto 8080).
+# Cada ruta reenvía según el prefijo a un servicio por su nombre en Eureka;
+# "lb://" significa "pregúntale a Eureka dónde está y reparte la carga".
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: usuarios
+              uri: lb://usuarios-service
+              predicates:
+                - Path=/api/usuarios/**,/api/auth/**
+            - id: pruebas
+              uri: lb://pruebas-service
+              predicates:
+                - Path=/api/pruebas/**
+            - id: protocolos
+              uri: lb://protocolos-service
+              predicates:
+                - Path=/api/protocolos/**
+            - id: archivos
+              uri: lb://archivos-service
+              predicates:
+                - Path=/api/archivos/**
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
