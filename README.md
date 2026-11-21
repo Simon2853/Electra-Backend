@@ -80,11 +80,11 @@ flowchart LR
 ### Opción rápida: `iniciar-todo.cmd`
 
 1. Abre **Laragon** y presiona **Start All**. Comprueba que MySQL esté corriendo.
-2. Haz doble clic en **`iniciar-todo.cmd`**, en la raíz del repositorio. Abre cada microservicio en su propia ventana y en este orden:
+2. Haz doble clic en **`iniciar-todo.cmd`**, en la raíz del repositorio. Abre cada microservicio en su propia ventana, **minimizada en la barra de tareas** (un clic para ver su registro si algo falla), y en este orden:
    1. `eureka-server`, y espera a que responda;
    2. `usuarios`, `pruebas`, `protocolos` y `archivos`, y espera a que respondan;
    3. `api-gateway`.
-3. Para detener un servicio, cierra su ventana.
+3. Para detener un servicio, cierra su ventana desde la barra de tareas. Para apagar todo el backend, ciérralas todas.
 
 El script usa el JDK de Android Studio si `JAVA_HOME` no está configurado. Si un servicio no arranca en 3 minutos, avisa cuál fue. Lo más común es que MySQL no esté corriendo.
 

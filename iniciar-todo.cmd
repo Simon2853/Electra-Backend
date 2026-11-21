@@ -1,7 +1,8 @@
 @echo off
 chcp 65001 >nul
 rem ============================================================================================
-rem  Levanta todo el backend de Electra, cada microservicio en su propia ventana.
+rem  Levanta todo el backend de Electra: cada microservicio en su propia ventana, minimizada
+rem  en la barra de tareas (un clic para ver su registro si algo falla).
 rem  Requisito: MySQL corriendo (Laragon -> Start All).
 rem  Para detener un servicio basta con cerrar su ventana (o Ctrl+C dentro de ella).
 rem
@@ -23,7 +24,7 @@ if not exist "%JAVA_HOME%\bin\java.exe" (
 
 rem ".\mvnw.cmd" (con .\) funciona aunque Windows tenga desactivada la búsqueda en la carpeta actual.
 echo [1/3] Iniciando eureka-server...
-start "eureka-server :8761" /D "%~dp0eureka-server" cmd /k .\mvnw.cmd spring-boot:run
+start "eureka-server :8761" /min /D "%~dp0eureka-server" cmd /k .\mvnw.cmd spring-boot:run
 
 echo       Esperando a que Eureka responda en http://localhost:8761 ...
 set intentos=0
@@ -38,10 +39,10 @@ goto esperarEureka
 echo       Eureka listo.
 
 echo [2/3] Iniciando los microservicios de negocio...
-start "usuarios-service :8081"   /D "%~dp0usuarios-service"   cmd /k .\mvnw.cmd spring-boot:run
-start "pruebas-service :8082"    /D "%~dp0pruebas-service"    cmd /k .\mvnw.cmd spring-boot:run
-start "protocolos-service :8083" /D "%~dp0protocolos-service" cmd /k .\mvnw.cmd spring-boot:run
-start "archivos-service :8084"   /D "%~dp0archivos-service"   cmd /k .\mvnw.cmd spring-boot:run
+start "usuarios-service :8081" /min   /D "%~dp0usuarios-service"   cmd /k .\mvnw.cmd spring-boot:run
+start "pruebas-service :8082" /min    /D "%~dp0pruebas-service"    cmd /k .\mvnw.cmd spring-boot:run
+start "protocolos-service :8083" /min /D "%~dp0protocolos-service" cmd /k .\mvnw.cmd spring-boot:run
+start "archivos-service :8084" /min   /D "%~dp0archivos-service"   cmd /k .\mvnw.cmd spring-boot:run
 
 echo       Esperando a que usuarios-service responda en http://localhost:8081 ...
 set intentos=0
@@ -54,7 +55,7 @@ goto esperarServicios
 
 :serviciosListos
 echo [3/3] Iniciando api-gateway...
-start "api-gateway :8080" /D "%~dp0api-gateway" cmd /k .\mvnw.cmd spring-boot:run
+start "api-gateway :8080" /min /D "%~dp0api-gateway" cmd /k .\mvnw.cmd spring-boot:run
 
 echo.
 echo Listo. En unos 30 segundos todo deberia estar disponible:
