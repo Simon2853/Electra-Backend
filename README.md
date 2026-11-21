@@ -90,36 +90,94 @@ El script usa el JDK de Android Studio si `JAVA_HOME` no está configurado. Si u
 
 **Por qué ese orden:** Eureka es el registro donde cada servicio se anuncia al arrancar ("soy pruebas-service y estoy en el puerto 8082"). El Gateway le pregunta a Eureka dónde está cada servicio para reenviarle las peticiones de la app. El orden no es obligatorio, porque los servicios reintentan registrarse y el Gateway vuelve a consultar Eureka cada 30 segundos. Pero así se evitan los errores 503 mientras todo se encuentra.
 
-### Opción manual (un servicio por terminal)
+### Opción manual, paso a paso (una terminal por servicio)
 
-1. Abre **Laragon** y presiona **Start All**. Comprueba que MySQL esté corriendo.
-2. Indica qué JDK usar, en cada terminal que abras (PowerShell):
-   ```powershell
-   $env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
+Cada servicio necesita **su propia terminal abierta** mientras se use: si se cierra la terminal, ese servicio se apaga.
+
+**1. Base de datos**
+
+Abre **Laragon**, presiona **Start All** y comprueba que MySQL quede en verde. No hay que crear nada: las bases de datos (`electra_usuarios`, `electra_pruebas`...) se crean solas.
+
+**2. Abrir el proyecto en VS Code**
+
+**Archivo → Abrir carpeta** → `electra-backend`. Abre una terminal con **Terminal → Nueva terminal**; debe ser PowerShell.
+
+**3. Indicar qué Java usar, en cada terminal nueva**
+
+```powershell
+$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
+```
+
+**4. Levantar los servicios en este orden**, cada uno en una terminal nueva (botón **+** del panel de terminal), repitiendo el paso 3 en cada una:
+
+| Orden | Comando | Espera hasta ver |
+|---|---|---|
+| 1 | `cd eureka-server; .\mvnw spring-boot:run` | `Started EurekaServerApplication` |
+| 2 | `cd usuarios-service; .\mvnw spring-boot:run` | `Started UsuariosServiceApplication` |
+| 3 | `cd pruebas-service; .\mvnw spring-boot:run` | `Started PruebasServiceApplication` |
+| 4 | `cd protocolos-service; .\mvnw spring-boot:run` | `Started ProtocolosServiceApplication` |
+| 5 | `cd archivos-service; .\mvnw spring-boot:run` | `Started ArchivosServiceApplication` |
+| 6 | `cd api-gateway; .\mvnw spring-boot:run` | `Started ApiGatewayApplication` |
+
+Los pasos 2 a 5 se pueden lanzar uno tras otro sin esperar entre ellos. Lo importante es que **Eureka vaya primero y el Gateway al final**.
+
+> El `.\` delante de `mvnw` es necesario si Windows tiene activada la opción de seguridad `NoDefaultCurrentDirectoryInExePath`. Con `.\` funciona siempre.
+
+**5. Comprobar que todo esté arriba**
+
+- http://localhost:8761 → en *Instances currently registered with Eureka* deben aparecer **5**: API-GATEWAY, USUARIOS-SERVICE, PRUEBAS-SERVICE, PROTOCOLOS-SERVICE y ARCHIVOS-SERVICE.
+- http://localhost:8080/api/usuarios → debe responder la lista de usuarios en JSON. Si responde 503, espera 30 segundos y vuelve a intentarlo: el Gateway todavía no se entera de que los servicios existen.
+
+En VS Code también se pueden levantar con la extensión **Spring Boot Dashboard**.
+
+### Apagar todo
+
+En cada terminal presiona **Ctrl + C** (si pregunta, responde `S`), o cierra las terminales. Si se usó el script, cierra sus ventanas desde la barra de tareas. Los datos quedan guardados en MySQL.
+
+## Usar la app con el backend
+
+### Con el emulador de Android Studio
+
+1. Con el backend arriba, abre el proyecto **Electra** en Android Studio.
+2. Revisa la URL en `app/src/main/java/com/example/electra/data/remote/ConfiguracionApi.kt`:
+   ```kotlin
+   const val BASE_URL = "http://10.0.2.2:8080/"
    ```
-3. Levanta los servicios **en este orden**, cada uno en su propia terminal:
-   ```powershell
-   cd eureka-server;      .\mvnw spring-boot:run   # primero: los demás se registran aquí
-   cd usuarios-service;   .\mvnw spring-boot:run
-   cd pruebas-service;    .\mvnw spring-boot:run
-   cd protocolos-service; .\mvnw spring-boot:run
-   cd archivos-service;   .\mvnw spring-boot:run
-   cd api-gateway;        .\mvnw spring-boot:run
-   ```
-   En VS Code también se puede hacer con la extensión **Spring Boot Dashboard**.
-4. Abre http://localhost:8761. Los 5 servicios deben aparecer en *Instances currently registered with Eureka*. Después de arrancar, el Gateway tarda unos 30 segundos en enterarse de los servicios nuevos: si responde 503, espera un poco y vuelve a intentar.
-5. Prueba que todo funcione: http://localhost:8080/api/usuarios debería responder `[]` o la lista de cuentas.
+   `10.0.2.2` es cómo el emulador ve al computador. Con el emulador no se cambia.
+3. Elige el emulador y presiona **Run ▶**.
+4. Cuando la app pregunte por **dispositivos cercanos**, presiona **Allow**. Es el permiso de red local que exige Android 17: sin él la app no llega al servidor.
+5. Inicia sesión, o crea una cuenta desde "Regístrate".
 
-## Exponer el Gateway a Internet (para la app)
+Si aparece la franja roja "Sin conexión con el servidor", no hay que reiniciar nada: la app reintenta cada 10 segundos y, cuando el backend responde, la franja desaparece y la pantalla recarga sus datos.
 
-El teléfono no puede llegar a `localhost` del computador, así que se publica **solo el puerto 8080** (el Gateway) con el reenvío de puertos de VS Code:
+### Con un teléfono físico (Gateway expuesto a Internet)
+
+El teléfono no puede llegar a `localhost` ni a `10.0.2.2` del computador, así que se publica **solo el puerto 8080** (el Gateway) con el reenvío de puertos de VS Code:
 
 1. En VS Code, abre el panel **Puertos** (*Ports*, junto a la Terminal) y elige **Reenviar un puerto** → `8080`. Pide iniciar sesión con GitHub.
 2. Haz clic derecho sobre el puerto → **Visibilidad del puerto** → **Pública**.
-3. Copia la **dirección reenviada** (algo como `https://abc123-8080.brs.devtunnels.ms`) y pégala como `BASE_URL` de Retrofit en la app.
-4. La URL **cambia cada vez que se crea el túnel de nuevo**. Por eso la app la tiene en un solo lugar y las fotos se guardan con ruta relativa.
+3. Copia la **dirección reenviada** (algo como `https://abc123-8080.brs.devtunnels.ms`) y pégala en `ConfiguracionApi.kt`, con `/` al final:
+   ```kotlin
+   const val BASE_URL = "https://abc123-8080.brs.devtunnels.ms/"
+   ```
+4. Conecta el teléfono por USB con la depuración USB activada, elígelo en Android Studio y presiona **Run ▶**.
 
-> Si al abrir la URL en el navegador aparece una página de advertencia de *Dev Tunnels*, es normal: Retrofit no la ve. Si llegara a aparecer en la app, se evita enviando el encabezado `X-Tunnel-Skip-AntiPhishing-Page: true`.
+La URL **cambia cada vez que se crea el túnel de nuevo**: si la app deja de conectar, revisa que `BASE_URL` sea la actual. Por eso la URL está en un solo lugar y las fotos se guardan con ruta relativa: siguen cargando aunque cambie.
+
+> Dev Tunnels muestra una página de advertencia a los navegadores. La app la omite enviando el encabezado `X-Tunnel-Skip-AntiPhishing-Page: true`, que ya va en todas las llamadas de Retrofit y de Coil.
+
+### Problemas frecuentes
+
+| Síntoma | Causa probable | Qué hacer |
+|---|---|---|
+| `mvnw no se reconoce` | Falta `.\` | Escribe `.\mvnw` |
+| `JAVA_HOME is not set` | No se configuró Java en esa terminal | Repite el paso 3 |
+| `Communications link failure` en un servicio | MySQL no está corriendo | Laragon → Start All, y reinicia ese servicio |
+| `Port 8080 was already in use` | Ese servicio ya está corriendo en otra terminal o ventana | Cierra la otra, o usa la que ya está corriendo |
+| La app dice "sin conexión" con todo arriba (emulador) | Se rechazó el permiso de red local | Ajustes del emulador → Apps → Electra → Permisos → Dispositivos cercanos → Permitir |
+| La app dice "sin conexión" con todo arriba (teléfono) | `BASE_URL` apunta a un túnel antiguo o privado | Revisa que el puerto sea **Público** y que la URL sea la actual |
+| Eureka muestra menos de 5 servicios | Alguno se cayó al arrancar | Revisa su terminal: el error aparece al final |
+| La app recibe 503 | El Gateway todavía no ve los servicios | Espera 30 segundos |
 
 ---
 
