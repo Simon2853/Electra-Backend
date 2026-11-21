@@ -1,2 +1,5 @@
 # Archivos subidos al servicio de archivos (no van al repositorio)
 archivos-service/uploads/
+
+# Registros de ejecuciones locales
+target-logs/
