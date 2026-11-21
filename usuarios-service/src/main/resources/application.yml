@@ -1,0 +1,25 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: usuarios-service
+  datasource:
+    # Base de datos propia de este servicio; se crea sola la primera vez (MySQL de Laragon).
+    url: jdbc:mysql://localhost:3306/electra_usuarios?createDatabaseIfNotExist=true
+    username: root
+    password:
+  jpa:
+    # Crea o actualiza las tablas a partir de las entidades.
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
