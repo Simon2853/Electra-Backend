@@ -4,6 +4,25 @@ Microservicios de **Electra**, la app de Android para registrar pruebas eléctri
 
 **Tecnologías:** Kotlin · Spring Boot 4.1.3 · Spring Cloud 2025.1.4 (Eureka, Gateway, OpenFeign) · Spring Data JPA · MySQL 8 (Laragon) · springdoc-openapi (Swagger) · JUnit 5 + MockK · JaCoCo · Maven
 
+## Integrantes
+
+| Nombre | Rol en el proyecto |
+|---|---|
+| **Simón Muñoz** | Proyecto individual: diseño, desarrollo de la app Android y de los microservicios, pruebas y documentación. |
+
+## Funcionalidades
+
+- **usuarios-service:** registro e inicio de sesión, contraseñas cifradas con BCrypt, recuperar y cambiar contraseña, editar perfil y avatar, y roles (técnico, supervisor y administrador).
+- **pruebas-service:** registrar pruebas eléctricas y consultar el historial por equipo. Cada usuario ve lo que le permite su rol (lo consulta a `usuarios-service` con Feign).
+- **protocolos-service:** crear protocolos con un número correlativo único, editar observaciones y formalizarlos (solo supervisor o administrador). Un protocolo formalizado ya no se modifica.
+- **archivos-service:** subir, mostrar y borrar las fotos de evidencia y de perfil, con validación del formato real de la imagen y un tamaño máximo de 5 MB.
+- **api-gateway + eureka-server:** única entrada para la app (puerto 8080) y descubrimiento de los servicios por nombre.
+- **En todos los servicios:** validaciones de los datos de entrada, errores uniformes con el código HTTP correcto, documentación Swagger y pruebas unitarias con cobertura JaCoCo sobre el 80 %.
+
+> **API externa, APK firmado, llave .jks y planificación en Trello:** están en el README de la app,
+> [Electra](https://github.com/Simon2853/Electra#readme). La API externa (Open-Meteo) la consume la app
+> directamente y no pasa por este backend.
+
 ---
 
 ## Arquitectura
